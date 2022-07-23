@@ -1,12 +1,12 @@
 from prefect import Flow
 
 from tuberia.dataframe_table import df_table
-from tuberia.table import Table
+from tuberia.pyspark_table import PySparkTable
 
 
 def test_dataframe_table_task(spark):
     @df_table(
-        persist=lambda df: Table(
+        persist=lambda df: PySparkTable(
             database="my_database",
             name="_".join(sorted([str(i.id) for i in df.collect()])),
         )

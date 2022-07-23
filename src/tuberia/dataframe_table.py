@@ -1,38 +1,45 @@
-from typing import Any, Callable, Optional, Union, overload
+from typing import Any, Callable, Optional, Union, overload, Generic, TypeVar
 
 from makefun import wraps
 from prefect.core.task import _validate_run_signature
-from pyspark.sql import DataFrame
 
-from tuberia.table import Table, TableTask
+from tuberia.table import _TTable, TableTask
 
 
-class DataFrameTableTask(TableTask):
+_TSchema = TypeVar("_TSchema")
+_TDataFrame = TypeVar("_TDataFrame")
+
+
+class DataFrameTableTask(
+    TableTask[_TTable], Generic[_TTable, _TSchema, _TDataFrame]
+):
     def get_table_name(self, **kwargs) -> str:
         return self.name.format(**kwargs)
 
-    def define(self, **_: Any) -> DataFrame:
+    def define(self, **_: Any) -> _TDataFrame:
         raise NotImplementedError()
 
-    def persist(self, _: DataFrame, /) -> Table:
+    def persist(self, _: _TDataFrame, /) -> _TTable:
         raise NotImplementedError()
 
-    def validate(self, _: Table, /) -> None:
+    def validate(self, _: _TTable, /) -> None:
         pass
 
-    def run(self, **kwargs: Any) -> Table:
+    def run(self, **kwargs: Any) -> _TTable:
         df = self.define(**kwargs)
         table = self.persist(df)
         self.validate(table)
         return table
 
 
-class DataFrameTableFunctionTask(DataFrameTableTask):
+class DataFrameTableFunctionTask(
+    DataFrameTableTask[_TTable, _TSchema, _TDataFrame]
+):
     def __init__(
         self,
-        define: Optional[Callable[..., DataFrame]] = None,
-        persist: Optional[Callable[[DataFrame], Table]] = None,
-        validate: Optional[Callable[[Table], None]] = None,
+        define: Optional[Callable[..., _TDataFrame]] = None,
+        persist: Optional[Callable[[_TDataFrame], _TTable]] = None,
+        validate: Optional[Callable[[_TTable], None]] = None,
         **kwargs: Any,
     ):
         if define is not None:
@@ -50,25 +57,31 @@ class DataFrameTableFunctionTask(DataFrameTableTask):
 # To support type checking with optional arguments to `table`, we need to make
 # use of `typing.overload`
 @overload
-def df_table(fun: Callable[..., DataFrame]) -> DataFrameTableFunctionTask:  # type: ignore
-    pass
+def df_table(
+    fun: Callable[..., _TDataFrame]
+) -> DataFrameTableFunctionTask[_TTable, _TSchema, _TDataFrame]:
+    ...
 
 
 @overload
 def df_table(
-    define: Optional[Callable[..., DataFrame]] = None,
-    persist: Optional[Callable[[DataFrame], Table]] = None,
-    validate: Optional[Callable[[Table], None]] = None,
+    define: Optional[Callable[..., _TDataFrame]] = None,
+    schema: Optional[_TSchema] = None,
+    persist: Optional[Callable[[_TDataFrame], _TTable]] = None,
+    validate: Optional[Callable[[_TTable], None]] = None,
     **task_init_kwargs: Any,
-) -> Callable[[Callable[..., DataFrame]], DataFrameTableFunctionTask]:  # type: ignore
-    pass
+) -> Callable[
+    [Callable[..., _TDataFrame]],
+    DataFrameTableFunctionTask[_TTable, _TSchema, _TDataFrame],
+]:
+    ...
 
 
-def df_table(  # type: ignore
-    fun: Callable[..., DataFrame] = None, **task_init_kwargs: Any
+def df_table(
+    fun: Callable[..., _TDataFrame] = None, **task_init_kwargs: Any
 ) -> Union[
     DataFrameTableFunctionTask,
-    Callable[[Callable[..., DataFrame]], DataFrameTableFunctionTask],
+    Callable[[Callable[..., _TDataFrame]], DataFrameTableFunctionTask],
 ]:
     if fun is None:
         return lambda fun: DataFrameTableFunctionTask(

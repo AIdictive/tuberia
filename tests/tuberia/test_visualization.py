@@ -5,7 +5,7 @@ from typing import Dict, List
 import pytest
 from prefect import Flow
 
-from tuberia.table import Table, table
+from tuberia.table import table
 from tuberia.visualization import (
     flow_to_mermaid_code,
     open_mermaid_flow_in_browser,
@@ -15,17 +15,17 @@ from tuberia.visualization import (
 @pytest.fixture(scope="module")
 def flow():
     @table
-    def one() -> Table:
-        return Table(database="my_database", name="one")
+    def one() -> str:
+        return "my_database.one"
 
     @table
-    def two(one: Table, letter: str) -> Table:
-        return Table(database="my_database", name="two")
+    def two(one: str, letter: str) -> str:
+        return "my_database.two"
 
     @table
-    def concat(tables: List[Table]) -> Table:
-        print(f"table concat created from {', '.join(i.name for i in tables)}")
-        return Table(database="my_database", name="concat")
+    def concat(tables: List[str]) -> str:
+        print(f"table concat created from {', '.join(tables)}")
+        return f"my_database.concat"
 
     with Flow("test") as flow:
         one_table = one()
