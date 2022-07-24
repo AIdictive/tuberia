@@ -3,21 +3,26 @@ from typing import List
 import pytest
 from prefect import Flow
 
+from tuberia.base_table import BaseTable
 from tuberia.table import TableTask, table
 
 
-def my_table(rows: int) -> str:
+class StrTable(BaseTable):
+    name: str
+
+
+def my_table(rows: int) -> StrTable:
     print(f"creating table with {rows} rows")
-    return "my_database.my_table"
+    return StrTable(name="my_database.my_table")
 
 
 @pytest.fixture
-def my_table_decorator_no_params() -> TableTask[str]:
+def my_table_decorator_no_params() -> TableTask[StrTable]:
     return table(my_table)
 
 
 @pytest.fixture
-def my_table_decorator_with_params() -> TableTask[str]:
+def my_table_decorator_with_params() -> TableTask[StrTable]:
     return table(name="my_super_table")(my_table)
 
 
@@ -47,19 +52,19 @@ def test_table_in_flow(my_table_decorator_no_params: TableTask, capsys):
 
 def test_flow_with_dependencies(capsys):
     @table
-    def one() -> str:
+    def one() -> StrTable:
         print("table one created")
-        return "my_database.one"
+        return StrTable(name="my_database.one")
 
     @table
-    def two(one: str, letter: str) -> str:
-        print(f"table two created from {one} and letter={letter}")
-        return f"my_database.two_{letter}"
+    def two(one: StrTable, letter: str) -> StrTable:
+        print(f"table two created from {one.name} and letter={letter}")
+        return StrTable(name=f"my_database.two_{letter}")
 
     @table
-    def concat(tables: List[str]) -> str:
-        print(f"table concat created from {', '.join(tables)}")
-        return "my_database.concat"
+    def concat(tables: List[StrTable]) -> StrTable:
+        print(f"table concat created from {', '.join(i.name for i in tables)}")
+        return StrTable(name="my_database.concat")
 
     with Flow("test") as flow:
         one_table = one()
@@ -77,5 +82,8 @@ def test_flow_with_dependencies(capsys):
             "table two created from my_database.one and letter=b",
         ]
     )
-    assert captured[3] == "table concat created from my_database.two_a, my_database.two_b"
+    assert (
+        captured[3]
+        == "table concat created from my_database.two_a, my_database.two_b"
+    )
     assert captured[4] == ""
