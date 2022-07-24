@@ -3,8 +3,8 @@ from typing import List
 import pytest
 from prefect import Flow
 
-from tuberia.base_table import BaseTable
-from tuberia.table import TableTask, table
+from tuberia.table import BaseTable
+from tuberia.table_task import TableTask, table
 
 
 class StrTable(BaseTable):

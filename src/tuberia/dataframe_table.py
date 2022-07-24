@@ -3,7 +3,7 @@ from typing import Any, Callable, Generic, Optional, TypeVar
 from makefun import wraps
 from prefect.core.task import _validate_run_signature
 
-from tuberia.table import TableTask, _TTable
+from tuberia.table_task import TableTask, _TTable
 
 _TSchema = TypeVar("_TSchema")
 _TDataFrame = TypeVar("_TDataFrame")

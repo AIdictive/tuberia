@@ -3,15 +3,15 @@ from typing import Any, Callable, Optional, Union, overload
 from pyspark.sql.dataframe import DataFrame
 from pyspark.sql.types import StructType
 
-from tuberia.base_table import BaseTable
 from tuberia.dataframe_table import DataFrameTableFunctionTask
-from tuberia.table import TableTask
+from tuberia.table import BaseTable
+from tuberia.table_task import TableTask
 
 
 class PySparkTable(BaseTable):
     database: str
     name: str
-    path: Optional[str]
+    path: Optional[str] = None
 
     @property
     def full_name(self) -> str:

@@ -1,5 +1,5 @@
-from tuberia.table import TableTask
-from tuberia.base_table import BaseTable
+from tuberia.table import BaseTable
+from tuberia.table_task import TableTask
 
 
 class PolarsTable(BaseTable):
